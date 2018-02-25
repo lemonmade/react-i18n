@@ -8,8 +8,8 @@ import {
 import {translate} from './utilities';
 
 export interface NumberFormatOptions extends Intl.NumberFormatOptions {
-  as?: 'number' | 'currency' | 'percent',
-  precision?: number,
+  as?: 'number' | 'currency' | 'percent';
+  precision?: number;
 }
 
 export default class I18n {
@@ -27,7 +27,10 @@ export default class I18n {
     return translate(id, this.translations, replacements);
   }
 
-  formatNumber(amount: number, {as, precision, ...options}: NumberFormatOptions = {}) {
+  formatNumber(
+    amount: number,
+    {as, precision, ...options}: NumberFormatOptions = {},
+  ) {
     const {locale, currency} = this.details;
 
     if (as === 'currency' && currency == null) {

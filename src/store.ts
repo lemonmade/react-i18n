@@ -25,7 +25,7 @@ export default class I18nStore implements I18nDetails {
     this.subscriptions.add(subscription);
 
     return {
-      unsubscribe: () => this.subscriptions.delete(subscription)
+      unsubscribe: () => this.subscriptions.delete(subscription),
     };
   }
 

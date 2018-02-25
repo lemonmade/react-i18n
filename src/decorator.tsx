@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as PropTypes from 'prop-types';
+
 import hoistStatics = require('hoist-non-react-statics');
 import {getDisplayName} from '@shopify/react-utilities/components';
 import {ReactComponent} from '@shopify/react-utilities/types';
@@ -16,8 +17,10 @@ interface Context {
 
 export interface WithI18nOptions {
   displayName?: string;
-  fallback?: TranslationDictionary,
-  translations?(locale: string): TranslationDictionary | Promise<TranslationDictionary> | undefined;
+  fallback?: TranslationDictionary;
+  translations?(
+    locale: string,
+  ): TranslationDictionary | Promise<TranslationDictionary> | undefined;
 }
 
 export interface WithI18nProps {
@@ -29,7 +32,11 @@ export interface State {
   loading: boolean;
 }
 
-export function withI18n({displayName, fallback, translations}: WithI18nOptions = {}) {
+export function withI18n({
+  displayName,
+  fallback,
+  translations,
+}: WithI18nOptions = {}) {
   return function addI18n<OwnProps, C>(
     WrappedComponent: ReactComponent<OwnProps & WithI18nProps> & C,
   ): ReactComponent<OwnProps> & C {
@@ -41,7 +48,12 @@ export function withI18n({displayName, fallback, translations}: WithI18nOptions 
       static childContextTypes = {i18n: PropTypes.instanceOf(I18n)};
 
       state: State = {
-        i18n: new I18n(fallback ? [fallback, ...this.parentTranslations] : this.parentTranslations, this.context.i18nStore),
+        i18n: new I18n(
+          fallback
+            ? [fallback, ...this.parentTranslations]
+            : this.parentTranslations,
+          this.context.i18nStore,
+        ),
         loading: false,
       };
 
@@ -71,9 +83,9 @@ export function withI18n({displayName, fallback, translations}: WithI18nOptions 
 
         this.updateI18n(i18nStore);
 
-        this.subscription = i18nStore.subscribe((i18nDetails) => {
+        this.subscription = i18nStore.subscribe(i18nDetails => {
           this.updateI18n(i18nDetails);
-        })
+        });
       }
 
       componentWillUnmount() {
@@ -90,9 +102,14 @@ export function withI18n({displayName, fallback, translations}: WithI18nOptions 
         let currentTranslations: TranslationDictionary[];
 
         if (isPromise(ownTranslations)) {
-          currentTranslations = fallback ? [fallback, ...this.parentTranslations] : this.parentTranslations;
+          currentTranslations = fallback
+            ? [fallback, ...this.parentTranslations]
+            : this.parentTranslations;
         } else {
-          currentTranslations = [...ownTranslations, ...this.parentTranslations];
+          currentTranslations = [
+            ...ownTranslations,
+            ...this.parentTranslations,
+          ];
         }
 
         this.setState({
@@ -103,39 +120,47 @@ export function withI18n({displayName, fallback, translations}: WithI18nOptions 
         const index = ++this.localeChangeIndex;
 
         if (isPromise(ownTranslations)) {
-          ownTranslations.then((resolvedOwnTranslations) => {
-            if (this.localeChangeIndex !== index || !this.mounted) {
-              return;
-            }
+          const resolvedOwnTranslations = await ownTranslations;
+          if (this.localeChangeIndex !== index || !this.mounted) {
+            return;
+          }
 
-            this.setState({
-              i18n: new I18n([...resolvedOwnTranslations, ...this.parentTranslations], details),
-              loading: false,
-            });
+          this.setState({
+            i18n: new I18n(
+              [...resolvedOwnTranslations, ...this.parentTranslations],
+              details,
+            ),
+            loading: false,
           });
         }
       }
 
-      private getTranslations(locale: string): TranslationDictionary[] | Promise<TranslationDictionary[]> {
+      private getTranslations(
+        locale: string,
+      ): TranslationDictionary[] | Promise<TranslationDictionary[]> {
         const {translationCache} = this;
 
         if (translationCache.has(locale)) {
           return translationCache.get(locale)!;
         }
 
-        const translationResults = filterUndefined((translations && getPossibleLocales(locale).map(translations)) || []);
-        
+        const translationResults = filterUndefined(
+          (translations && getPossibleLocales(locale).map(translations)) || [],
+        );
+
         if (!isArrayOfPromises(translationResults)) {
           const castTranslations: TranslationDictionary[] = translationResults as any;
           translationCache.set(locale, castTranslations);
           return castTranslations;
         }
 
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           let finished = 0;
           const translationDictionaries: TranslationDictionary[] = [];
 
-          function addTranslationDictionary(dictionary?: TranslationDictionary) {
+          function addTranslationDictionary(
+            dictionary?: TranslationDictionary,
+          ) {
             if (dictionary) {
               translationDictionaries.push(dictionary);
             }
@@ -147,11 +172,13 @@ export function withI18n({displayName, fallback, translations}: WithI18nOptions 
           }
 
           for (const translationPromise of translationResults) {
-            translationPromise.then((result) => {
-              addTranslationDictionary(result);
-            }).catch(() => {
-              addTranslationDictionary();
-            })
+            translationPromise
+              .then(result => {
+                addTranslationDictionary(result);
+              })
+              .catch(() => {
+                addTranslationDictionary();
+              });
           }
         });
       }
@@ -170,11 +197,15 @@ function getPossibleLocales(locale: string) {
   return split.length > 1 ? [locale, split[0]] : [locale];
 }
 
-function isPromise<T>(possiblePromise: T | Promise<T>): possiblePromise is Promise<T> {
+function isPromise<T>(
+  possiblePromise: T | Promise<T>,
+): possiblePromise is Promise<T> {
   return (possiblePromise as any).then != null;
 }
 
-function isArrayOfPromises<T>(possiblePromiseArray: (T | Promise<T>)[]): possiblePromiseArray is Promise<T>[] {
+function isArrayOfPromises<T>(
+  possiblePromiseArray: (T | Promise<T>)[],
+): possiblePromiseArray is Promise<T>[] {
   return possiblePromiseArray.some(isPromise);
 }
 

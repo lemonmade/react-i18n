@@ -24,7 +24,11 @@ export function translate(
   replacements?: any,
 ): any {
   for (const translationDictionary of translations) {
-    const result = translateWithDictionary(id, translationDictionary, replacements);
+    const result = translateWithDictionary(
+      id,
+      translationDictionary,
+      replacements,
+    );
     if (result) {
       return result;
     }

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "rootDir": "../..",
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "strict": true
+  },
+  "lib": ["dom", "es2015", "es2016", "es2017"],
+  "include": ["../../src/**/*", "../../tests/**/*"]
+}

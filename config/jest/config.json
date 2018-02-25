@@ -1,0 +1,17 @@
+{
+  "rootDir": "../..",
+  "testRegex": ".*\\.(test|integration)\\.(js|ts)x?$",
+  "moduleFileExtensions": [
+    "ts",
+    "tsx",
+    "js",
+    "jsx",
+    "json"
+  ],
+  "transform": {
+    "\\.tsx?$": "ts-jest/preprocessor.js"
+  },
+  "moduleNameMapper": {
+    "^tests/(.*)": "<rootDir>/tests/$1"
+  }
+}
