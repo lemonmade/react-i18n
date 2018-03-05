@@ -83,7 +83,7 @@ export function withI18n({
         const context: Context = this.context;
         const {i18nStore} = context;
 
-        this.updateI18n(i18nStore);
+        this.updateI18n(i18nStore.details);
 
         this.subscription = i18nStore.subscribe(i18nDetails => {
           this.updateI18n(i18nDetails);
