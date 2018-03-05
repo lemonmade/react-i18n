@@ -1,5 +1,6 @@
 {
   "rootDir": "../..",
+  "setupFiles": ["<rootDir>/tests/setup.ts"],
   "testRegex": ".*\\.(test|integration)\\.(js|ts)x?$",
   "moduleFileExtensions": [
     "ts",

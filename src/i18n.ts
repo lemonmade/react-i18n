@@ -33,7 +33,7 @@ export default class I18n {
   ) {
     const {locale, currency} = this.details;
 
-    if (as === 'currency' && currency == null) {
+    if (as === 'currency' && currency == null && options.currency == null) {
       throw new Error(
         `No currency code provided. format() as currency cannot be called without a currency code.`,
       );
@@ -50,7 +50,7 @@ export default class I18n {
   formatDate(date: Date, options?: Intl.DateTimeFormatOptions) {
     const {locale, timezone} = this.details;
 
-    if (timezone == null) {
+    if (timezone == null && options.timeZone == null) {
       throw new Error(
         `No timezone code provided. format() cannot be called without a timezone code.`,
       );
@@ -58,7 +58,7 @@ export default class I18n {
 
     return new Intl.DateTimeFormat(locale, {
       timeZone: timezone,
-      ...(options as Intl.DateTimeFormatOptions),
+      ...options,
     }).format(date);
   }
 }

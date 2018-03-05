@@ -8,17 +8,29 @@ export interface Subscription {
   unsubscribe(): void;
 }
 
-export default class I18nStore implements I18nDetails {
-  locale: string;
-  currency?: string;
-  timezone?: string;
-
+export default class I18nStore {
+  protected parent?: I18nStore;
   private subscriptions = new Set<Subscriber>();
+  private children = new Set<I18nStore>();
 
-  constructor({locale, currency, timezone}: I18nDetails) {
-    this.locale = locale;
-    this.currency = currency;
-    this.timezone = timezone;
+  constructor(public details: I18nDetails) {}
+
+  addChild(manager: I18nStore) {
+    if (manager.parent) {
+      manager.parent.removeChild(manager);
+    }
+
+    manager.parent = this;
+    this.children.add(manager);
+  }
+
+  removeChild(manager: I18nStore) {
+    if (manager.parent !== this) {
+      return;
+    }
+
+    manager.parent = undefined;
+    this.children.delete(manager);
   }
 
   subscribe(subscription: Subscriber): Subscription {
@@ -29,21 +41,15 @@ export default class I18nStore implements I18nDetails {
     };
   }
 
-  update({locale, currency, timezone}: Partial<I18nDetails>) {
-    if (locale) {
-      this.locale = locale;
-    }
-
-    if (currency) {
-      this.currency = currency;
-    }
-
-    if (timezone) {
-      this.timezone = timezone;
-    }
+  update(details: I18nDetails) {
+    this.details = details;
 
     for (const subscription of this.subscriptions) {
-      subscription(this);
+      subscription(details);
+    }
+
+    for (const child of this.children) {
+      child.update(details);
     }
   }
 }

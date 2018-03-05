@@ -29,6 +29,7 @@ export function translate(
       translationDictionary,
       replacements,
     );
+
     if (result) {
       return result;
     }

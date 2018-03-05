@@ -32,6 +32,8 @@ export interface State {
   loading: boolean;
 }
 
+(withI18n as any).test = I18n;
+
 export function withI18n({
   displayName,
   fallback,
@@ -106,10 +108,9 @@ export function withI18n({
             ? [fallback, ...this.parentTranslations]
             : this.parentTranslations;
         } else {
-          currentTranslations = [
-            ...ownTranslations,
-            ...this.parentTranslations,
-          ];
+          currentTranslations = fallback
+            ? [...ownTranslations, fallback, ...this.parentTranslations]
+            : [...ownTranslations, ...this.parentTranslations];
         }
 
         this.setState({
@@ -127,7 +128,13 @@ export function withI18n({
 
           this.setState({
             i18n: new I18n(
-              [...resolvedOwnTranslations, ...this.parentTranslations],
+              fallback
+                ? [
+                    ...resolvedOwnTranslations,
+                    fallback,
+                    ...this.parentTranslations,
+                  ]
+                : [...resolvedOwnTranslations, ...this.parentTranslations],
               details,
             ),
             loading: false,
@@ -145,7 +152,9 @@ export function withI18n({
         }
 
         const translationResults = filterUndefined(
-          (translations && getPossibleLocales(locale).map(translations)) || [],
+          (translations &&
+            getPossibleLocales(locale).map(locale => translations(locale))) ||
+            [],
         );
 
         if (!isArrayOfPromises(translationResults)) {
@@ -193,8 +202,9 @@ export function withI18n({
 }
 
 function getPossibleLocales(locale: string) {
-  const split = locale.split('-');
-  return split.length > 1 ? [locale, split[0]] : [locale];
+  const normalizedLocale = locale.toLowerCase();
+  const split = normalizedLocale.split('-');
+  return split.length > 1 ? [normalizedLocale, split[0]] : [normalizedLocale];
 }
 
 function isPromise<T>(
