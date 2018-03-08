@@ -37,9 +37,10 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
   return function addI18n<OwnProps, C>(
     WrappedComponent: ReactComponent<OwnProps & WithI18nProps> & C,
   ): ReactComponent<OwnProps> & C {
+    const name = id || getDisplayName(WrappedComponent);
+
     class WithTranslation extends React.Component<OwnProps, State> {
-      static displayName = `withI18n(${id ||
-        getDisplayName(WrappedComponent)})`;
+      static displayName = `withI18n(${name})`;
       static WrappedComponent = WrappedComponent;
       static contextTypes = contextTypes;
       static childContextTypes = {
@@ -66,6 +67,12 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
             ? parentConnection.extend(connectionOptions)
             : new Connection(connectionOptions);
         } else {
+          if (parentConnection == null) {
+            throw new Error(
+              `Neither component ${name} nor its ancestors have any translations. Did you forget to include the \`translations\` or \`fallback\` options?`,
+            );
+          }
+
           connection = parentConnection;
         }
 
