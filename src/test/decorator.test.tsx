@@ -107,13 +107,13 @@ describe('withI18n()', () => {
     });
   });
 
-  describe('displayName', () => {
-    it('uses component’s name when no displayName exists', () => {
+  describe('id', () => {
+    it('uses component’s name when no id exists', () => {
       const I18nHello = withI18n()(Hello);
       expect(I18nHello.displayName).toContain(Hello.name);
     });
 
-    it('uses component’s displayName when no options isProvided', () => {
+    it('uses component’s displayName when no options are provided', () => {
       const displayName = 'FooBar';
       const I18nHello = withI18n()(
         // eslint-disable-next-line react/prefer-stateless-function
@@ -128,9 +128,9 @@ describe('withI18n()', () => {
       expect(I18nHello.displayName).toContain(displayName);
     });
 
-    it('uses a displayName provided in the options argument', () => {
+    it('uses a provided id as the displayName in the options argument', () => {
       const displayName = 'FooBar';
-      const I18nHello = withI18n({displayName})(Hello);
+      const I18nHello = withI18n({id: displayName})(Hello);
       expect(I18nHello.displayName).toContain(displayName);
     });
   });

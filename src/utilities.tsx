@@ -151,3 +151,5 @@ function updateStringWithReplacements(str: string, replacements: any): any {
     return <span>{pieces}</span>;
   }
 }
+
+export function noop() {}
