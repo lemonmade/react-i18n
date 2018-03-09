@@ -1,6 +1,8 @@
 import {mountWithProvider} from 'tests/utilities';
+
 import * as React from 'react';
 import {ReactWrapper} from 'enzyme';
+
 import {withI18n} from '../decorator';
 import I18n from '../i18n';
 import {I18nDetails, TranslationDictionary} from '../types';
@@ -148,7 +150,7 @@ function contentFromWrapper(wrapper: ReactWrapper) {
 }
 
 async function resolveDictionaryPromise(
-  wrapper: ReactWrapper,
+  _: ReactWrapper,
   promise: Promise<any>,
 ) {
   await promise;

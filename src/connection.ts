@@ -1,24 +1,26 @@
 import {TranslationDictionary} from './types';
 import {noop} from './utilities';
 
-export type TranslationDictionaryResult =
-  | TranslationDictionary
-  | Promise<TranslationDictionary | undefined>
-  | undefined;
+interface TranslationGetter {
+  (locale: string):
+    | TranslationDictionary
+    | Promise<TranslationDictionary | undefined>
+    | undefined;
+}
 
 export interface Options {
   id: string;
   fallback?: TranslationDictionary;
-  translations(locale: string): TranslationDictionaryResult;
+  translations?: TranslationGetter;
 }
 
 export default class Connection {
   public id: Options['id'];
   public parent?: Connection;
   public fallbackTranslations: Options['fallback'];
-  public translationsForLocale: Options['translations'];
+  public translationsForLocale: TranslationGetter;
 
-  constructor({id, fallback, translations = noop}: Options) {
+  constructor({id, fallback, translations = noop as () => undefined}: Options) {
     this.id = id;
     this.fallbackTranslations = fallback;
     this.translationsForLocale = translations;

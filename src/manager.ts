@@ -10,8 +10,8 @@ export interface Subscriber {
   (connectionState: ConnectionState): void;
 }
 
-export interface Subscription {
-  unsubscribe(): void;
+export interface ConnectionResult {
+  disconnect(): void;
 }
 
 export default class Manager {
@@ -44,19 +44,22 @@ export default class Manager {
     return extractedTranslations;
   }
 
-  connect(connection: Connection, subscriber: Subscriber) {
-    const currentLocale = this.details.locale;
-    const possibleLocales = getPossibleLocales(currentLocale);
+  connect(connection: Connection, subscriber: Subscriber): ConnectionResult {
+    const possibleLocales = getPossibleLocales(this.details.locale);
 
     for (const locale of possibleLocales) {
       const id = localeId(connection, locale);
+
+      if (this.translations.has(id)) {
+        continue;
+      }
+
       const translations = connection.translationsForLocale(locale);
 
       if (isPromise(translations)) {
         this.translations.set(
           id,
           translations.then(result => {
-            // TODO need to do something about the locale changing during promise resolution
             this.translations.set(id, result);
             this.updateSubscribersForId(id);
             return result;
@@ -70,7 +73,7 @@ export default class Manager {
     this.subscriptions.set(subscriber, connection);
 
     return {
-      unsubscribe: () => this.subscriptions.delete(subscriber),
+      disconnect: () => this.subscriptions.delete(subscriber),
     };
   }
 
@@ -113,13 +116,39 @@ export default class Manager {
     }
   }
 
-  // update(details: I18nDetails) {
-  //   this.details = details;
+  update(details: I18nDetails) {
+    this.details = details;
+    const possibleLocales = getPossibleLocales(details.locale);
 
-  //   for (const subscription of this.subscriptions) {
-  //     subscription(details);
-  //   }
-  // }
+    for (const connection of this.subscriptions.values()) {
+      for (const locale of possibleLocales) {
+        const id = localeId(connection, locale);
+
+        if (this.translations.has(id)) {
+          continue;
+        }
+
+        const translations = connection.translationsForLocale(locale);
+
+        if (isPromise(translations)) {
+          this.translations.set(
+            id,
+            translations.then(result => {
+              this.translations.set(id, result);
+              this.updateSubscribersForId(id);
+              return result;
+            }),
+          );
+        } else {
+          this.translations.set(id, translations);
+        }
+      }
+    }
+
+    for (const [subscription, connection] of this.subscriptions.entries()) {
+      subscription(this.state(connection));
+    }
+  }
 
   private updateSubscribersForId(id: string) {
     for (const [subscriber, connection] of this.subscriptions.entries()) {

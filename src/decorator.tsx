@@ -7,7 +7,7 @@ import {ReactComponent} from '@shopify/react-utilities/types';
 
 import I18n from './I18n';
 import Connection from './connection';
-import Manager, {Subscription, ConnectionState} from './manager';
+import Manager, {ConnectionResult, ConnectionState} from './manager';
 import {TranslationDictionary} from './types';
 import {contextTypes} from './Provider';
 
@@ -19,6 +19,7 @@ interface Context {
 export interface WithI18nOptions {
   id?: string;
   fallback?: TranslationDictionary;
+  renderWhileLoading?: boolean;
   translations?(
     locale: string,
   ): TranslationDictionary | Promise<TranslationDictionary> | undefined;
@@ -33,7 +34,12 @@ export interface State {
   loading: boolean;
 }
 
-export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
+export function withI18n({
+  id,
+  fallback,
+  translations,
+  renderWhileLoading = true,
+}: WithI18nOptions = {}) {
   return function addI18n<OwnProps, C>(
     WrappedComponent: ReactComponent<OwnProps & WithI18nProps> & C,
   ): ReactComponent<OwnProps> & C {
@@ -47,9 +53,8 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
         i18nConnection: PropTypes.instanceOf(Connection),
       };
 
-      private subscription?: Subscription;
-      private mounted = false;
-      private connection?: Connection;
+      private connection: Connection;
+      private managerConnection: ConnectionResult;
 
       constructor(props: OwnProps, context: Context) {
         super(props, context);
@@ -78,10 +83,11 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
 
         this.connection = connection;
 
-        this.subscription = manager.connect(
+        this.managerConnection = manager.connect(
           connection,
           this.updateI18n.bind(this),
         );
+
         const connectionState = manager.state(connection);
 
         this.state = {
@@ -94,24 +100,19 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
         return {i18nConnection: this.connection};
       }
 
-      componentDidMount() {
-        this.mounted = true;
-      }
-
       componentWillUnmount() {
-        this.mounted = false;
-        this.subscription!.unsubscribe();
+        this.managerConnection.disconnect();
       }
 
       render() {
-        return <WrappedComponent {...this.props} i18n={this.state.i18n} />;
+        const {loading, i18n} = this.state;
+
+        return loading && !renderWhileLoading ? null : (
+          <WrappedComponent {...this.props} i18n={i18n} />
+        );
       }
 
       private updateI18n(connectionState: ConnectionState) {
-        if (!this.mounted) {
-          return;
-        }
-
         this.setState({
           i18n: new I18n(
             connectionState.translations,
@@ -128,26 +129,4 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
     );
     return FinalComponent as React.ComponentClass<any> & C;
   };
-}
-
-function getPossibleLocales(locale: string) {
-  const normalizedLocale = locale.toLowerCase();
-  const split = normalizedLocale.split('-');
-  return split.length > 1 ? [normalizedLocale, split[0]] : [normalizedLocale];
-}
-
-function isPromise<T>(
-  possiblePromise: T | Promise<T>,
-): possiblePromise is Promise<T> {
-  return (possiblePromise as any).then != null;
-}
-
-function isArrayOfPromises<T>(
-  possiblePromiseArray: (T | Promise<T>)[],
-): possiblePromiseArray is Promise<T>[] {
-  return possiblePromiseArray.some(isPromise);
-}
-
-function filterUndefined<T>(array: (T | undefined)[]): T[] {
-  return array.filter(Boolean) as T[];
 }
