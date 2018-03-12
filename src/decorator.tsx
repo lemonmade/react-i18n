@@ -5,9 +5,10 @@ import hoistStatics = require('hoist-non-react-statics');
 import {getDisplayName} from '@shopify/react-utilities/components';
 import {ReactComponent} from '@shopify/react-utilities/types';
 
-import I18n from './I18n';
+import I18n from './i18n';
 import Connection from './connection';
 import Manager, {ConnectionResult, ConnectionState} from './manager';
+import {InvalidI18nConnectionError} from './errors';
 import {TranslationDictionary} from './types';
 import {contextTypes} from './Provider';
 
@@ -31,15 +32,13 @@ export interface WithI18nProps {
 
 export interface State {
   i18n: I18n;
-  loading: boolean;
 }
 
-export function withI18n({
-  id,
-  fallback,
-  translations,
-  renderWhileLoading = true,
-}: WithI18nOptions = {}) {
+const childContextTypes = {
+  i18nConnection: PropTypes.instanceOf(Connection),
+};
+
+export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
   return function addI18n<OwnProps, C>(
     WrappedComponent: ReactComponent<OwnProps & WithI18nProps> & C,
   ): ReactComponent<OwnProps> & C {
@@ -48,10 +47,8 @@ export function withI18n({
     class WithTranslation extends React.Component<OwnProps, State> {
       static displayName = `withI18n(${name})`;
       static WrappedComponent = WrappedComponent;
-      static contextTypes = contextTypes;
-      static childContextTypes = {
-        i18nConnection: PropTypes.instanceOf(Connection),
-      };
+      static contextTypes = {...contextTypes, ...childContextTypes};
+      static childContextTypes = childContextTypes;
 
       private connection: Connection;
       private managerConnection: ConnectionResult;
@@ -73,7 +70,7 @@ export function withI18n({
             : new Connection(connectionOptions);
         } else {
           if (parentConnection == null) {
-            throw new Error(
+            throw new InvalidI18nConnectionError(
               `Neither component ${name} nor its ancestors have any translations. Did you forget to include the \`translations\` or \`fallback\` options?`,
             );
           }
@@ -92,7 +89,6 @@ export function withI18n({
 
         this.state = {
           i18n: new I18n(connectionState.translations, manager.details),
-          loading: connectionState.loading,
         };
       }
 
@@ -105,11 +101,7 @@ export function withI18n({
       }
 
       render() {
-        const {loading, i18n} = this.state;
-
-        return loading && !renderWhileLoading ? null : (
-          <WrappedComponent {...this.props} i18n={i18n} />
-        );
+        return <WrappedComponent {...this.props} i18n={this.state.i18n} />;
       }
 
       private updateI18n(connectionState: ConnectionState) {
@@ -118,7 +110,6 @@ export function withI18n({
             connectionState.translations,
             this.context.i18nManager.details,
           ),
-          loading: connectionState.loading,
         });
       }
     }

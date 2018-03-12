@@ -1,158 +1,171 @@
-import {mountWithProvider} from 'tests/utilities';
+jest.mock('../connection', () => ({
+  default: jest.fn(function Connection(this: any) {
+    this.extend = jest.fn();
+  }),
+}));
+
+jest.mock('../manager', () => ({
+  default: jest.fn(function Manager(this: any) {
+    this.connect = jest.fn();
+    this.state = jest.fn(() => ({loading: false, translations: []}));
+    this.details = {locale: 'en-ca'};
+  }),
+}));
+
+jest.mock('../i18n', () => ({
+  default: jest.fn(),
+}));
 
 import * as React from 'react';
-import {ReactWrapper} from 'enzyme';
+import * as PropTypes from 'prop-types';
+import {mount} from 'enzyme';
 
 import {withI18n} from '../decorator';
-import I18n from '../i18n';
-import {I18nDetails, TranslationDictionary} from '../types';
 
-function Hello({i18n}: any) {
-  return <div>{i18n.translate('hello')}</div>;
+const I18n: jest.Mock = require.requireMock('../i18n').default;
+
+const Connection: jest.Mock<{extend: jest.Mock}> = require.requireMock(
+  '../connection',
+).default;
+
+const Manager: jest.Mock<{
+  connect: jest.Mock;
+  state: jest.Mock;
+  details: object;
+}> = require.requireMock('../manager').default;
+
+function MyComponent() {
+  return null;
 }
 
-function Goodbye({i18n}: any) {
-  return <div>{i18n.translate('goodbye')}</div>;
-}
-
-const en = {hello: 'Hello', goodbye: 'Goodbye'};
+const en = {hello: 'Hello'};
 const fr = {hello: 'Bonjour'};
-const frCa = {hello: '’Allo'};
-
-function createTranslationPromise(dictionary: TranslationDictionary) {
-  return new Promise<TranslationDictionary>(resolve => resolve(dictionary));
-}
-
-function getTranslation(locale: string) {
-  switch (locale) {
-    case 'fr-ca':
-      return frCa;
-    case 'fr':
-      return fr;
-    default:
-      return en;
-  }
-}
 
 describe('withI18n()', () => {
-  // For some reason, the I18n class we get here is different from
-  // the one that decorator.tsx has.
-  // eslint-disable-next-line jest/no-disabled-tests
-  it.skip('provides an i18n object in props', () => {
-    const I18nHello = withI18n()(Hello);
-    const i18nHello = mountWithProvider(<I18nHello />);
-    expect(i18nHello.find(Hello).prop('i18n')).toBeInstanceOf(I18n);
+  beforeEach(() => {
+    Connection.mockClear();
+    Manager.mockClear();
+    I18n.mockClear();
   });
 
-  describe('translations', () => {
-    it('uses a fallback when no alternative dictionaries are provided', () => {
-      const I18nHello = withI18n({
-        fallback: en,
-      })(Hello);
-      expect(content(<I18nHello />)).toBe(en.hello);
-    });
-
-    it('calls the translations() function with the full and root locale', () => {
-      const translations = jest.fn().mockReturnValue(en);
-      const I18nHello = withI18n({
-        translations,
-      })(Hello);
-
-      mountWithProvider(<I18nHello />, {locale: 'en-US'});
-
-      expect(translations).toHaveBeenCalledWith('en-us');
-      expect(translations).toHaveBeenCalledWith('en');
-    });
-
-    it('uses provided translations when they are synchronous', () => {
-      const I18nHello = withI18n({
-        translations: () => en,
-      })(Hello);
-      expect(content(<I18nHello />)).toBe(en.hello);
-    });
-
-    it('uses a fallback when the component provides no matches for the string', () => {
-      const I18nGoodbye = withI18n({
-        fallback: en,
-        translations: getTranslation,
-      })(Goodbye);
-      expect(content(<I18nGoodbye />, {locale: 'fr-ca'})).toBe(en.goodbye);
-    });
-
-    it('prefers a provided translation to the fallback', () => {
-      const I18nHello = withI18n({
-        translations: getTranslation,
-      })(Hello);
-      expect(content(<I18nHello />, {locale: 'fr'})).toBe(fr.hello);
-    });
-
-    it('prefers the most specific translation', () => {
-      const I18nHello = withI18n({
-        translations: getTranslation,
-      })(Hello);
-      expect(content(<I18nHello />, {locale: 'fr-ca'})).toBe(frCa.hello);
-    });
-
-    it('uses the fallback while loading asynchronous dictionaries', async () => {
-      const promise = createTranslationPromise(fr);
-
-      const I18nHello = withI18n({
-        fallback: en,
-        translations: () => promise,
-      })(Hello);
-
-      const hello = mountWithProvider(<I18nHello />, {locale: 'fr'});
-
-      expect(contentFromWrapper(hello)).toBe(en.hello);
-      await resolveDictionaryPromise(hello, promise);
-      expect(contentFromWrapper(hello)).toBe(fr.hello);
-    });
+  it('throws an error when there is no parent connection and no translations', () => {
+    const I18nComponent = withI18n()(MyComponent);
+    expect(() => mountWithManager(<I18nComponent />)).toThrowError();
   });
 
-  describe('id', () => {
-    it('uses component’s name when no id exists', () => {
-      const I18nHello = withI18n()(Hello);
-      expect(I18nHello.displayName).toContain(Hello.name);
-    });
+  it('connects to the manager with provided translations and fallback', () => {
+    const options = {
+      id: 'MyComponent',
+      fallback: en,
+      translations: jest.fn(),
+    };
 
-    it('uses component’s displayName when no options are provided', () => {
-      const displayName = 'FooBar';
-      const I18nHello = withI18n()(
-        // eslint-disable-next-line react/prefer-stateless-function
-        class MyComponent extends React.Component<never, never> {
-          static displayName = displayName;
+    const manager = new Manager();
+    const I18nComponent = withI18n(options)(MyComponent);
+    mountWithManager(<I18nComponent />, manager);
 
-          render() {
-            return null;
-          }
-        },
-      );
-      expect(I18nHello.displayName).toContain(displayName);
-    });
+    expect(Connection).toHaveBeenCalledWith(options);
+    expect(manager.connect).toHaveBeenCalledWith(
+      Connection.mock.instances[0],
+      expect.any(Function),
+    );
+  });
 
-    it('uses a provided id as the displayName in the options argument', () => {
-      const displayName = 'FooBar';
-      const I18nHello = withI18n({id: displayName})(Hello);
-      expect(I18nHello.displayName).toContain(displayName);
-    });
+  it('conects to the manager with an extended connection provided by a parent', () => {
+    const options = {
+      id: 'MyComponent',
+      fallback: en,
+      translations: jest.fn(),
+    };
+
+    const manager = new Manager();
+    const parentConnection = new Connection();
+    const connection = new Connection();
+    parentConnection.extend.mockReturnValue(connection);
+
+    const I18nComponent = withI18n(options)(MyComponent);
+    mountWithManager(<I18nComponent />, manager, parentConnection);
+
+    expect(parentConnection.extend).toHaveBeenCalledWith(options);
+    expect(manager.connect).toHaveBeenCalledWith(
+      connection,
+      expect.any(Function),
+    );
+  });
+
+  it('uses a parent connection directly when no custom translations are provided', () => {
+    const manager = new Manager();
+    const parentConnection = new Connection();
+
+    const I18nComponent = withI18n()(MyComponent);
+    mountWithManager(<I18nComponent />, manager, parentConnection);
+
+    expect(Connection).toHaveBeenCalledTimes(1);
+    expect(parentConnection.extend).not.toHaveBeenCalled();
+    expect(manager.connect).toHaveBeenCalledWith(
+      parentConnection,
+      expect.any(Function),
+    );
+  });
+
+  it('uses the translations from initial state', () => {
+    const manager = new Manager();
+    manager.state.mockReturnValue({translations: [en], loading: false});
+
+    const I18nComponent = withI18n({fallback: en})(MyComponent);
+    const i18nComponent = mountWithManager(<I18nComponent />, manager);
+
+    expect(I18n).toHaveBeenCalledTimes(1);
+    expect(I18n).toHaveBeenCalledWith([en], manager.details);
+    expect(i18nComponent.find(MyComponent).prop('i18n')).toBe(
+      I18n.mock.instances[0],
+    );
+  });
+
+  it('responds to an update in the connection by updating the i18n object', () => {
+    const manager = new Manager();
+
+    const I18nComponent = withI18n({fallback: en})(MyComponent);
+    const i18nComponent = mountWithManager(<I18nComponent />, manager);
+
+    const subscription = manager.connect.mock.calls[0][1];
+    expect(subscription).toBeInstanceOf(Function);
+    expect(I18n).toHaveBeenCalledTimes(1);
+
+    subscription({translations: [fr], loading: false});
+    i18nComponent.update();
+
+    expect(I18n).toHaveBeenCalledTimes(2);
+    expect(I18n).toHaveBeenLastCalledWith([fr], manager.details);
+    expect(i18nComponent.find(MyComponent).prop('i18n')).toBe(
+      I18n.mock.instances[1],
+    );
+  });
+
+  it('disconnects from the manager on unmount', () => {
+    const manager = new Manager();
+    const connectionManager = {disconnect: jest.fn()};
+    manager.connect.mockReturnValue(connectionManager);
+
+    const I18nComponent = withI18n({fallback: en})(MyComponent);
+    const i18nComponent = mountWithManager(<I18nComponent />, manager);
+
+    expect(connectionManager.disconnect).not.toHaveBeenCalled();
+    i18nComponent.unmount();
+    expect(connectionManager.disconnect).toHaveBeenCalled();
   });
 });
 
-function content(element: React.ReactElement<any>, details?: I18nDetails) {
-  return contentFromWrapper(mountWithProvider(element, details));
-}
-
-function contentFromWrapper(wrapper: ReactWrapper) {
-  return wrapper
-    .children()
-    .at(0)
-    .text();
-}
-
-async function resolveDictionaryPromise(
-  _: ReactWrapper,
-  promise: Promise<any>,
+function mountWithManager(
+  component: React.ReactElement<any>,
+  manager = new Manager(),
+  parentConnection?: any,
 ) {
-  await promise;
-  await new Promise(resolve => process.nextTick(resolve));
+  return mount(component, {
+    context: {i18nManager: manager, i18nConnection: parentConnection},
+    childContextTypes: {
+      i18nManager: PropTypes.any,
+      i18nConnection: PropTypes.any,
+    },
+  });
 }

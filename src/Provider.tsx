@@ -12,14 +12,14 @@ export interface Context {
 }
 
 export interface Props {
-  i18nManager: Manager;
+  manager: Manager;
 }
 
 export default class Provider extends React.PureComponent<Props, never> {
   static childContextTypes = contextTypes;
 
   getChildContext(): Context {
-    return {i18nManager: this.props.i18nManager};
+    return {i18nManager: this.props.manager};
   }
 
   render() {

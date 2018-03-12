@@ -4,7 +4,7 @@ import {
   ComplexReplacementDictionary,
   TranslationDictionary,
 } from './types';
-
+import {MissingCurrencyCodeError, MissingTimezoneError} from './errors';
 import {translate} from './utilities';
 
 export interface NumberFormatOptions extends Intl.NumberFormatOptions {
@@ -34,8 +34,8 @@ export default class I18n {
     const {locale, currency} = this.details;
 
     if (as === 'currency' && currency == null && options.currency == null) {
-      throw new Error(
-        `No currency code provided. format() as currency cannot be called without a currency code.`,
+      throw new MissingCurrencyCodeError(
+        `No currency code provided. formatNumber(amount, {as: 'currency'}) cannot be called without a currency code.`,
       );
     }
 
@@ -50,9 +50,9 @@ export default class I18n {
   formatDate(date: Date, options?: Intl.DateTimeFormatOptions) {
     const {locale, timezone} = this.details;
 
-    if (timezone == null && options.timeZone == null) {
-      throw new Error(
-        `No timezone code provided. format() cannot be called without a timezone code.`,
+    if (timezone == null && (options == null || options.timeZone == null)) {
+      throw new MissingTimezoneError(
+        `No timezone code provided. formatDate() cannot be called without a timezone.`,
       );
     }
 

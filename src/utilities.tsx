@@ -4,9 +4,11 @@ import {
   ComplexReplacementDictionary,
   PrimitiveReplacementDictionary,
 } from './types';
+import {MissingTranslationError} from './errors';
 
 const REPLACE_REGEX = /{([^}]*)}/g;
 const REPLACE_FINDER = /([^{]*)({([^}]*)})?/g;
+const MISSING_TRANSLATION = Symbol('Missing translation');
 
 export function translate(
   id: string,
@@ -30,24 +32,24 @@ export function translate(
       replacements,
     );
 
-    if (result) {
+    if (result !== MISSING_TRANSLATION) {
       return result;
     }
   }
 
-  return '';
+  throw new MissingTranslationError();
 }
 
 export function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   replacements?: PrimitiveReplacementDictionary,
-): string;
+): string | typeof MISSING_TRANSLATION;
 export function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   replacements?: ComplexReplacementDictionary,
-): React.ReactElement<any>;
+): React.ReactElement<any> | typeof MISSING_TRANSLATION;
 export function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
@@ -57,7 +59,7 @@ export function translateWithDictionary(
 
   for (const part of id.split('.')) {
     if (result == null || typeof result !== 'object') {
-      return '';
+      return MISSING_TRANSLATION;
     }
 
     result = result[part];
@@ -70,7 +72,7 @@ export function translateWithDictionary(
 
     return updateStringWithReplacements(result, replacements);
   } else {
-    return '';
+    return MISSING_TRANSLATION;
   }
 }
 
