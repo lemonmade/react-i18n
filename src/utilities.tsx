@@ -4,31 +4,40 @@ import {
   ComplexReplacementDictionary,
   PrimitiveReplacementDictionary,
 } from './types';
-import {MissingTranslationError} from './errors';
+import {MissingTranslationError, MissingReplacementError} from './errors';
 
 const REPLACE_REGEX = /{([^}]*)}/g;
 const REPLACE_FINDER = /([^{]*)({([^}]*)})?/g;
 const MISSING_TRANSLATION = Symbol('Missing translation');
+const PLURALIZATION_KEY_NAME = 'count';
 
 export function translate(
   id: string,
-  translations: TranslationDictionary[],
+  translations: TranslationDictionary | TranslationDictionary[],
+  locale: string,
   replacements?: PrimitiveReplacementDictionary,
 ): string;
 export function translate(
   id: string,
-  translations: TranslationDictionary[],
+  translations: TranslationDictionary | TranslationDictionary[],
+  locale: string,
   replacements?: ComplexReplacementDictionary,
-): React.ReactElement<any>;
+): (string | React.ReactElement<any>)[];
 export function translate(
   id: string,
-  translations: TranslationDictionary[],
-  replacements?: any,
+  translations: TranslationDictionary | TranslationDictionary[],
+  locale: string,
+  replacements?: PrimitiveReplacementDictionary | ComplexReplacementDictionary,
 ): any {
-  for (const translationDictionary of translations) {
+  const normalizedTranslations = Array.isArray(translations)
+    ? translations
+    : [translations];
+
+  for (const translationDictionary of normalizedTranslations) {
     const result = translateWithDictionary(
       id,
       translationDictionary,
+      locale,
       replacements,
     );
 
@@ -43,17 +52,20 @@ export function translate(
 export function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
+  locale: string,
   replacements?: PrimitiveReplacementDictionary,
 ): string | typeof MISSING_TRANSLATION;
 export function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
+  locale: string,
   replacements?: ComplexReplacementDictionary,
 ): React.ReactElement<any> | typeof MISSING_TRANSLATION;
 export function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
-  replacements?: any,
+  locale: string,
+  replacements?: PrimitiveReplacementDictionary | ComplexReplacementDictionary,
 ): any {
   let result: string | TranslationDictionary = translations;
 
@@ -65,11 +77,20 @@ export function translateWithDictionary(
     result = result[part];
   }
 
-  if (typeof result === 'string') {
-    if (replacements == null) {
-      return result;
-    }
+  if (
+    typeof result === 'object' &&
+    replacements != null &&
+    replacements.hasOwnProperty(PLURALIZATION_KEY_NAME)
+  ) {
+    const count = replacements[PLURALIZATION_KEY_NAME];
 
+    if (typeof count === 'number') {
+      const group = new Intl.PluralRules(locale).select(count);
+      result = result[group];
+    }
+  }
+
+  if (typeof result === 'string') {
     return updateStringWithReplacements(result, replacements);
   } else {
     return MISSING_TRANSLATION;
@@ -78,13 +99,18 @@ export function translateWithDictionary(
 
 function updateStringWithReplacements(
   str: string,
-  replacements: ComplexReplacementDictionary,
+  replacements?: ComplexReplacementDictionary,
 ): React.ReactElement<any>;
 function updateStringWithReplacements(
   str: string,
-  replacements: PrimitiveReplacementDictionary,
+  replacements?: PrimitiveReplacementDictionary,
 ): string;
-function updateStringWithReplacements(str: string, replacements: any): any {
+function updateStringWithReplacements(
+  str: string,
+  replacements:
+    | ComplexReplacementDictionary
+    | PrimitiveReplacementDictionary = {},
+): any {
   const allReplacementsArePrimitives = Object.keys(replacements).every(
     key => typeof replacements[key] !== 'object',
   );
@@ -94,7 +120,7 @@ function updateStringWithReplacements(str: string, replacements: any): any {
       const replacement = match.substring(1, match.length - 1);
 
       if (!replacements.hasOwnProperty(replacement)) {
-        throw new Error(
+        throw new MissingReplacementError(
           `No replacement found for key '${replacement}'. The following replacements were passed: ${Object.keys(
             replacements,
           )
@@ -150,7 +176,7 @@ function updateStringWithReplacements(str: string, replacements: any): any {
 
     REPLACE_FINDER.lastIndex = 0;
 
-    return <span>{pieces}</span>;
+    return pieces;
   }
 }
 
