@@ -3,8 +3,9 @@ jest.mock('../utilities', () => ({
 }));
 
 import I18n from '../i18n';
+import {MissingCurrencyCodeError, MissingTimezoneError} from '../errors';
 
-const translate = require('../utilities').translate as jest.Mock;
+const translate: jest.Mock = require('../utilities').translate;
 
 describe('I18n', () => {
   const defaultDetails = {locale: 'en-ca'};
@@ -73,7 +74,9 @@ describe('I18n', () => {
 
       it('throws an error when no currency code is given as the default or as an option', () => {
         const i18n = new I18n(defaultTranslations, defaultDetails);
-        expect(() => i18n.formatNumber(1, {as: 'currency'})).toThrowError();
+        expect(() => i18n.formatNumber(1, {as: 'currency'})).toThrowError(
+          MissingCurrencyCodeError,
+        );
       });
 
       it('uses the Intl number formatter with the default currency', () => {
@@ -163,7 +166,9 @@ describe('I18n', () => {
 
     it('throws an error when no timezone is given as the default or as an option', () => {
       const i18n = new I18n(defaultTranslations, defaultDetails);
-      expect(() => i18n.formatDate(new Date())).toThrowError();
+      expect(() => i18n.formatDate(new Date())).toThrowError(
+        MissingTimezoneError,
+      );
     });
 
     it('uses the Intl number formatter with the default timezone', () => {
