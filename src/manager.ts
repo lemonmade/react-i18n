@@ -153,7 +153,7 @@ export default class Manager {
   private updateSubscribersForId(id: string) {
     for (const [subscriber, connection] of this.subscriptions.entries()) {
       if (
-        localeIdsForConnection(connection, this.details.locale).indexOf(id) >= 0
+        localeIdsForConnection(connection, this.details.locale).includes(id)
       ) {
         subscriber(this.state(connection));
       }

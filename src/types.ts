@@ -1,3 +1,8 @@
+export enum LanguageDirection {
+  Rtl,
+  Ltr,
+}
+
 export interface I18nDetails {
   locale: string;
   currency?: string;

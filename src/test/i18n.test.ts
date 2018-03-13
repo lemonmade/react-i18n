@@ -3,6 +3,7 @@ jest.mock('../utilities', () => ({
 }));
 
 import I18n from '../i18n';
+import {LanguageDirection} from '../types';
 import {MissingCurrencyCodeError, MissingTimezoneError} from '../errors';
 
 const translate: jest.Mock = require('../utilities').translate;
@@ -13,6 +14,113 @@ describe('I18n', () => {
 
   beforeEach(() => {
     translate.mockReset();
+  });
+
+  describe('#locale', () => {
+    it('is exposed publicly', () => {
+      const locale = 'fr-ca';
+      const i18n = new I18n(defaultTranslations, {locale});
+      expect(i18n).toHaveProperty('locale', locale);
+    });
+
+    it('is normalized', () => {
+      const locale = 'fr-CA';
+      const i18n = new I18n(defaultTranslations, {locale});
+      expect(i18n).toHaveProperty('locale', locale.toLowerCase());
+    });
+  });
+
+  describe('#language', () => {
+    it('is determined from the locale', () => {
+      const locale = 'fr-ca';
+      const i18n = new I18n(defaultTranslations, {locale});
+      expect(i18n).toHaveProperty('language', 'fr');
+    });
+  });
+
+  describe('#languageDirection', () => {
+    it('is LanguageDirection.Ltr for LTR languages', () => {
+      expect(new I18n(defaultTranslations, {locale: 'en'})).toHaveProperty(
+        'languageDirection',
+        LanguageDirection.Ltr,
+      );
+    });
+
+    it('is LanguageDirection.Rtl for RTL languages', () => {
+      expect(new I18n(defaultTranslations, {locale: 'ar'})).toHaveProperty(
+        'languageDirection',
+        LanguageDirection.Rtl,
+      );
+    });
+  });
+
+  describe('#isLtrLanguage', () => {
+    it('is true for LTR languages', () => {
+      expect(new I18n(defaultTranslations, {locale: 'en'})).toHaveProperty(
+        'isLtrLanguage',
+        true,
+      );
+    });
+
+    it('is false for RTL languages', () => {
+      expect(new I18n(defaultTranslations, {locale: 'ar'})).toHaveProperty(
+        'isLtrLanguage',
+        false,
+      );
+    });
+  });
+
+  describe('#isRtlLanguage', () => {
+    it('is false for LTR languages', () => {
+      expect(new I18n(defaultTranslations, {locale: 'en'})).toHaveProperty(
+        'isRtlLanguage',
+        false,
+      );
+    });
+
+    it('is true for RTL languages', () => {
+      expect(new I18n(defaultTranslations, {locale: 'ar'})).toHaveProperty(
+        'isRtlLanguage',
+        true,
+      );
+    });
+  });
+
+  describe('#countryCode', () => {
+    it('is determined from the locale', () => {
+      const locale = 'fr-ca';
+      const i18n = new I18n(defaultTranslations, {locale});
+      expect(i18n).toHaveProperty('countryCode', 'ca');
+    });
+
+    it('is undefined when the locale does not have a country code', () => {
+      const locale = 'fr';
+      const i18n = new I18n(defaultTranslations, {locale});
+      // eslint-disable-next-line no-undefined
+      expect(i18n).toHaveProperty('countryCode', undefined);
+    });
+  });
+
+  describe('#defaultCurrency', () => {
+    it('is exposed publicly', () => {
+      const defaultCurrency = 'CAD';
+      const i18n = new I18n(defaultTranslations, {
+        ...defaultDetails,
+        currency: defaultCurrency,
+      });
+      expect(i18n).toHaveProperty('defaultCurrency', defaultCurrency);
+    });
+  });
+
+  describe('#defaultTimezone', () => {
+    it('is exposed publicly', () => {
+      const defaultTimezone = 'EST';
+      const i18n = new I18n(defaultTranslations, {
+        ...defaultDetails,
+        timezone: defaultTimezone,
+      });
+      expect(i18n).toHaveProperty('defaultTimezone', defaultTimezone);
+    });
   });
 
   describe('#translate()', () => {
