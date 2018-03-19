@@ -49,19 +49,19 @@ export function translate(
   throw new MissingTranslationError();
 }
 
-export function translateWithDictionary(
+function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   locale: string,
   replacements?: PrimitiveReplacementDictionary,
 ): string | typeof MISSING_TRANSLATION;
-export function translateWithDictionary(
+function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   locale: string,
   replacements?: ComplexReplacementDictionary,
 ): React.ReactElement<any> | typeof MISSING_TRANSLATION;
-export function translateWithDictionary(
+function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   locale: string,

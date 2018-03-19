@@ -2,7 +2,8 @@
   "extends": "./base.json",
   "compilerOptions": {
     "rootDir": "../../src",
-    "outDir": "../../lib"
+    "outDir": "../../lib",
+    "declaration": true
   },
   "include": ["../typescript/typings/**/*", "../../src/**/*"],
   "exclude": ["../../src/**/*.test.ts", "../../src/**/*.test.tsx"]

@@ -16,9 +16,11 @@
     "clean": "rm -rf lib",
     "prebuild": "yarn run clean",
     "build": "tsc --project config/typescript/build.json",
+    "prepublish": "yarn run check && yarn run build",
     "type-check": "tsc --noEmit",
     "test": "jest --config ./config/jest/config.json",
-    "test:watch": "yarn run test --watch"
+    "test:watch": "yarn run test --watch",
+    "check": "yarn lint && yarn run type-check && yarn test"
   },
   "devDependencies": {
     "@types/enzyme": "^3.1.9",

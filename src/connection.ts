@@ -1,7 +1,7 @@
 import {TranslationDictionary} from './types';
 import {noop} from './utilities';
 
-interface TranslationGetter {
+export interface TranslationGetter {
   (locale: string):
     | TranslationDictionary
     | Promise<TranslationDictionary | undefined>

@@ -474,6 +474,7 @@ describe('Manager', () => {
     });
   });
 
+  // eslint-disable-next-line jest/no-disabled-tests
   describe.skip('#update()', () => {});
 
   describe('#extract()', () => {

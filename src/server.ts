@@ -1,10 +1,10 @@
 import * as React from 'react';
 import reactTreeWalker from 'react-tree-walker';
-import Manager from './manager';
+import Manager, {ExtractedTranslations} from './manager';
 
 export default async function getTranslationsFromTree(
   tree: React.ReactElement<any>,
-) {
+): Promise<ExtractedTranslations> {
   let manager: Manager | undefined;
 
   await reactTreeWalker(
