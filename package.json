@@ -16,7 +16,7 @@
     "clean": "rm -rf lib",
     "prebuild": "yarn run clean",
     "build": "tsc --project config/typescript/build.json",
-    "prepublish": "yarn run check && yarn run build",
+    "prepublish": "in-publish && yarn run check && yarn run build || :",
     "type-check": "tsc --noEmit",
     "test": "jest --config ./config/jest/config.json",
     "test:watch": "yarn run test --watch",
@@ -30,6 +30,7 @@
     "enzyme-adapter-react-16": "^1.1.1",
     "eslint": "^4.18.1",
     "eslint-plugin-shopify": "^19.0.0",
+    "in-publish": "^2.0.0",
     "intl": "^1.2.5",
     "intl-pluralrules": "^0.1.0",
     "jest": "^22.4.2",
@@ -41,8 +42,8 @@
   },
   "dependencies": {
     "@shopify/react-utilities": "^1.2.0",
-    "@types/prop-types": "^15.5.2",
-    "@types/react": "^16.0.38",
+    "@types/prop-types": ">=15.0.0",
+    "@types/react": ">=16.0.0",
     "hoist-non-react-statics": "^2.5.0",
     "prop-types": "^15.6.0",
     "react-tree-walker": "^3.0.0"
