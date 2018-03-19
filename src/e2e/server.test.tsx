@@ -4,7 +4,7 @@ import {
   withI18n,
   WithI18nProps,
   Provider,
-  I18nManager,
+  Manager,
   getTranslationsFromTree,
 } from '..';
 
@@ -58,7 +58,7 @@ const WithoutOwnI18nComponent = withI18n()(MyComponent as any);
 
 describe('server', () => {
   it('allows for synchronously rendering', () => {
-    const manager = new I18nManager({locale: 'fr-ca'});
+    const manager = new Manager({locale: 'fr-ca'});
     const markup = renderToStaticMarkup(
       <Provider manager={manager}>
         <WithI18nComponent />
@@ -68,7 +68,7 @@ describe('server', () => {
   });
 
   it('extracts async translations', async () => {
-    const manager = new I18nManager({locale: 'fr-ca'});
+    const manager = new Manager({locale: 'fr-ca'});
     const element = (
       <Provider manager={manager}>
         <WithAsyncI18nComponent />
@@ -87,7 +87,7 @@ describe('server', () => {
   });
 
   it('handles nested translation connections', async () => {
-    const manager = new I18nManager({locale: 'fr'});
+    const manager = new Manager({locale: 'fr'});
     const element = (
       <Provider manager={manager}>
         <WithAsyncI18nComponent>

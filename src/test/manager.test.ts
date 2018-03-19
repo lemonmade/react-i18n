@@ -415,6 +415,29 @@ describe('Manager', () => {
         });
       });
 
+      it('uses only the nested fallbacks when own translations are loading but parents are loaded', () => {
+        const parent = new Connection({
+          id: createID(),
+          fallback: fallbackParent,
+          translations: getTranslationParent,
+        });
+
+        const connection = parent.extend({
+          id: createID(),
+          fallback,
+          translations: getTranslationAsync,
+        });
+
+        const manager = new Manager({...basicDetails, locale: 'en-us'});
+        manager.connect(parent, noop);
+        manager.connect(connection, noop);
+
+        expect(manager.state(connection)).toMatchObject({
+          loading: true,
+          translations: [fallback, fallbackParent],
+        });
+      });
+
       it('calls the subscription for children when parent translations resolve', async () => {
         const spy = jest.fn();
         const frTranslation = createTranslationPromise(fr);
@@ -447,6 +470,56 @@ describe('Manager', () => {
         await frCATranslation.resolve();
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith(manager.state(connection));
+      });
+    });
+  });
+
+  describe.skip('#update()', () => {});
+
+  describe('#extract()', () => {
+    it('provides an object with all async and sync translations keyed to unique IDs', async () => {
+      const parent = new Connection({
+        id: createID(),
+        translations: getTranslationParent,
+      });
+
+      const connection = parent.extend({
+        id: createID(),
+        translations: getTranslationAsync,
+      });
+
+      const manager = new Manager({...basicDetails, locale: 'en-us'});
+      manager.connect(parent, noop);
+      manager.connect(connection, noop);
+
+      const translationsByID = await manager.extract();
+      expect(Object.keys(translationsByID)).toBeArrayOfUniqueItems();
+
+      const translations = Object.values(translationsByID);
+      expect(translations).toContain(enUS);
+      expect(translations).toContain(en);
+      expect(translations).toContain(enUSParent);
+      expect(translations).toContain(enParent);
+    });
+
+    it('can use the extracted translations to make async translation resolution be synchronous', async () => {
+      const connection = new Connection({
+        id: createID(),
+        translations: getTranslationAsync,
+      });
+      const manager = new Manager({...basicDetails, locale: 'fr-ca'});
+      manager.connect(connection, noop);
+
+      const translations = await manager.extract();
+      const hydratedManager = new Manager(
+        {...basicDetails, locale: 'fr-ca'},
+        translations,
+      );
+      hydratedManager.connect(connection, noop);
+
+      expect(hydratedManager.state(connection)).toMatchObject({
+        loading: false,
+        translations: [frCA, fr],
       });
     });
   });

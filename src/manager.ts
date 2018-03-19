@@ -2,8 +2,9 @@ import {I18nDetails, TranslationDictionary} from './types';
 import Connection from './connection';
 
 export interface ConnectionState {
-  translations: TranslationDictionary[];
   loading: boolean;
+  fallbacks: TranslationDictionary[];
+  translations: TranslationDictionary[];
 }
 
 export interface Subscriber {
@@ -14,23 +15,30 @@ export interface ConnectionResult {
   disconnect(): void;
 }
 
+export interface ExtractedTranslations {
+  [key: string]: TranslationDictionary | undefined;
+}
+
 export default class Manager {
   public loading = false;
   private subscriptions = new Map<Subscriber, Connection>();
-  private translations = new Map<
+  private translations: Map<
     string,
     | TranslationDictionary
     | Promise<TranslationDictionary | undefined>
     | undefined
-  >();
+  >;
 
-  constructor(public details: I18nDetails) {}
+  constructor(
+    public details: I18nDetails,
+    initialTranslations: ExtractedTranslations = {},
+  ) {
+    this.translations = new Map(Object.entries(initialTranslations));
+  }
 
-  async extract() {
+  async extract(): Promise<ExtractedTranslations> {
     const translationPairs = Array.from(this.translations.entries());
-    const extractedTranslations: {
-      [key: string]: TranslationDictionary | undefined;
-    } = {};
+    const extractedTranslations: ExtractedTranslations = {};
 
     await Promise.all(
       translationPairs.map(async ([id, translationDictionary]) => {
@@ -86,16 +94,19 @@ export default class Manager {
   state(connection: Connection): ConnectionState {
     const parentState = connection.parent
       ? this.state(connection.parent)
-      : {loading: false, translations: []};
+      : {loading: false, translations: [], fallbacks: []};
 
     const fallbackTranslations = connection.fallbackTranslations
       ? [connection.fallbackTranslations]
       : [];
 
+    const allFallbacks = [...fallbackTranslations, ...parentState.fallbacks];
+
     if (parentState.loading) {
       return {
-        ...parentState,
-        translations: [...fallbackTranslations, ...parentState.translations],
+        loading: true,
+        fallbacks: allFallbacks,
+        translations: allFallbacks,
       };
     }
 
@@ -107,6 +118,7 @@ export default class Manager {
     if (noPromises(translations)) {
       return {
         loading: false,
+        fallbacks: allFallbacks,
         translations: [
           ...filterUndefined(translations),
           ...fallbackTranslations,
@@ -114,10 +126,10 @@ export default class Manager {
         ],
       };
     } else {
-      // TODO; need to isolate to only parent fallbacks
       return {
         loading: true,
-        translations: [...fallbackTranslations, ...parentState.translations],
+        fallbacks: allFallbacks,
+        translations: allFallbacks,
       };
     }
   }
