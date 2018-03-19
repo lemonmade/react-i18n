@@ -11,5 +11,7 @@ module.exports = {
     'import/first': 'off',
     // This is just a bad rule
     'promise/always-return': 'off',
+    // Same here
+    'no-undefined': 'off',
   },
 };

@@ -3287,6 +3287,10 @@ react-transition-group@^1.2.0:
     prop-types "^15.5.6"
     warning "^3.0.0"
 
+react-tree-walker@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-tree-walker/-/react-tree-walker-3.0.0.tgz#3bcc198267cd2e0189dc80245a19917907c9ead4"
+
 react@^16.2.0:
   version "16.2.0"
   resolved "https://registry.yarnpkg.com/react/-/react-16.2.0.tgz#a31bd2dab89bff65d42134fa187f24d054c273ba"

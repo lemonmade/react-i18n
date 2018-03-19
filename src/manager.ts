@@ -59,11 +59,17 @@ export default class Manager {
       if (isPromise(translations)) {
         this.translations.set(
           id,
-          translations.then(result => {
-            this.translations.set(id, result);
-            this.updateSubscribersForId(id);
-            return result;
-          }),
+          translations
+            .then(result => {
+              this.translations.set(id, result);
+              this.updateSubscribersForId(id);
+              return result;
+            })
+            .catch(() => {
+              this.translations.set(id, undefined);
+              this.updateSubscribersForId(id);
+              return undefined;
+            }),
         );
       } else {
         this.translations.set(id, translations);
@@ -133,11 +139,17 @@ export default class Manager {
         if (isPromise(translations)) {
           this.translations.set(
             id,
-            translations.then(result => {
-              this.translations.set(id, result);
-              this.updateSubscribersForId(id);
-              return result;
-            }),
+            translations
+              .then(result => {
+                this.translations.set(id, result);
+                this.updateSubscribersForId(id);
+                return result;
+              })
+              .catch(() => {
+                this.translations.set(id, undefined);
+                this.updateSubscribersForId(id);
+                return undefined;
+              }),
           );
         } else {
           this.translations.set(id, translations);
@@ -161,10 +173,20 @@ export default class Manager {
   }
 }
 
-function localeIdsForConnection(connection: Connection, fullLocale: string) {
-  return getPossibleLocales(fullLocale).map(locale =>
-    localeId(connection, locale),
-  );
+function localeIdsForConnection(
+  connection: Connection,
+  fullLocale: string,
+): string[] {
+  const parentLocaleIds = connection.parent
+    ? localeIdsForConnection(connection.parent, fullLocale)
+    : [];
+
+  return [
+    ...parentLocaleIds,
+    ...getPossibleLocales(fullLocale).map(locale =>
+      localeId(connection, locale),
+    ),
+  ];
 }
 
 function getPossibleLocales(locale: string) {
@@ -184,7 +206,7 @@ function filterUndefined<T>(array: (T | undefined)[]): T[] {
 }
 
 function localeId(connection: Connection, locale: string) {
-  return `${connection.id}${locale}`;
+  return `${connection.id}__${locale}`;
 }
 
 function noPromises<T>(array: (T | Promise<T>)[]): array is T[] {
