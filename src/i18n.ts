@@ -79,8 +79,13 @@ export default class I18n {
     id: string,
     replacements?: ComplexReplacementDictionary,
   ): React.ReactElement<any>;
-  translate(id: string, replacements: any): any {
-    return translate(id, this.translations, replacements);
+  translate(
+    id: string,
+    replacements?:
+      | PrimitiveReplacementDictionary
+      | ComplexReplacementDictionary,
+  ): any {
+    return translate(id, this.translations, this.locale, replacements);
   }
 
   formatNumber(
