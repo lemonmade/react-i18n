@@ -124,7 +124,7 @@ describe('I18n', () => {
   });
 
   describe('#translate()', () => {
-    it('calls the translate() utility with translations, key, and replacements', () => {
+    it('calls the translate() utility with translations, key, locale, and replacements', () => {
       const mockResult = 'translated string';
       const replacements = {name: 'Chris'};
       translate.mockReturnValue(mockResult);
@@ -136,6 +136,7 @@ describe('I18n', () => {
       expect(translate).toHaveBeenCalledWith(
         'hello',
         defaultTranslations,
+        i18n.locale,
         replacements,
       );
     });
