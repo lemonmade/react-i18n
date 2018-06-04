@@ -7,35 +7,50 @@ import {
 import {MissingTranslationError, MissingReplacementError} from './errors';
 
 const REPLACE_REGEX = /{([^}]*)}/g;
-const REPLACE_FINDER = /([^{]*)({([^}]*)})?/g;
 const MISSING_TRANSLATION = Symbol('Missing translation');
 const PLURALIZATION_KEY_NAME = 'count';
+const SEPARATOR = '.';
+
+export interface TranslateOptions<
+  Replacements extends
+    | PrimitiveReplacementDictionary
+    | ComplexReplacementDictionary
+> {
+  scope?: string | string[];
+  replacements?: Replacements;
+}
 
 export function translate(
   id: string,
+  options: TranslateOptions<PrimitiveReplacementDictionary>,
   translations: TranslationDictionary | TranslationDictionary[],
   locale: string,
-  replacements?: PrimitiveReplacementDictionary,
 ): string;
 export function translate(
   id: string,
+  options: TranslateOptions<ComplexReplacementDictionary>,
   translations: TranslationDictionary | TranslationDictionary[],
   locale: string,
-  replacements?: ComplexReplacementDictionary,
 ): (string | React.ReactElement<any>)[];
 export function translate(
   id: string,
+  options: TranslateOptions<
+    PrimitiveReplacementDictionary | ComplexReplacementDictionary
+  >,
   translations: TranslationDictionary | TranslationDictionary[],
   locale: string,
-  replacements?: PrimitiveReplacementDictionary | ComplexReplacementDictionary,
 ): any {
+  const {scope, replacements} = options;
+
   const normalizedTranslations = Array.isArray(translations)
     ? translations
     : [translations];
 
+  const normalizedId = normalizeIdentifier(id, scope);
+
   for (const translationDictionary of normalizedTranslations) {
     const result = translateWithDictionary(
-      id,
+      normalizedId,
       translationDictionary,
       locale,
       replacements,
@@ -69,7 +84,7 @@ function translateWithDictionary(
 ): any {
   let result: string | TranslationDictionary = translations;
 
-  for (const part of id.split('.')) {
+  for (const part of id.split(SEPARATOR)) {
     if (result == null || typeof result !== 'object') {
       return MISSING_TRANSLATION;
     }
@@ -111,6 +126,7 @@ function updateStringWithReplacements(
     | ComplexReplacementDictionary
     | PrimitiveReplacementDictionary = {},
 ): any {
+  const replaceFinder = /([^{]*)({([^}]*)})?/g;
   const allReplacementsArePrimitives = Object.keys(replacements).every(
     key => typeof replacements[key] !== 'object',
   );
@@ -134,7 +150,7 @@ function updateStringWithReplacements(
   } else {
     const pieces: (string | React.ReactElement<any>)[] = [];
 
-    let match = REPLACE_FINDER.exec(str);
+    let match = replaceFinder.exec(str);
     let matchIndex = 0;
 
     while (match) {
@@ -171,13 +187,21 @@ function updateStringWithReplacements(
         pieces.push(finalReplacement);
       }
 
-      match = REPLACE_FINDER.exec(str);
+      match = replaceFinder.exec(str);
     }
 
-    REPLACE_FINDER.lastIndex = 0;
+    replaceFinder.lastIndex = 0;
 
     return pieces;
   }
 }
 
-export function noop() {}
+function normalizeIdentifier(id: string, scope?: string | string[]) {
+  if (scope == null) {
+    return id;
+  }
+
+  return `${
+    typeof scope === 'string' ? scope : scope.join(SEPARATOR)
+  }${SEPARATOR}${id}`;
+}

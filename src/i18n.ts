@@ -6,11 +6,15 @@ import {
   LanguageDirection,
 } from './types';
 import {MissingCurrencyCodeError, MissingTimezoneError} from './errors';
-import {translate} from './utilities';
+import {translate, TranslateOptions as RootTranslateOptions} from './utilities';
 
 export interface NumberFormatOptions extends Intl.NumberFormatOptions {
   as?: 'number' | 'currency' | 'percent';
   precision?: number;
+}
+
+export interface TranslateOptions {
+  scope: RootTranslateOptions<any>['scope'];
 }
 
 /* eslint-disable line-comment-position */
@@ -74,6 +78,16 @@ export default class I18n {
     this.defaultTimezone = timezone;
   }
 
+  translate(
+    id: string,
+    options: TranslateOptions,
+    replacements?: PrimitiveReplacementDictionary,
+  ): string;
+  translate(
+    id: string,
+    options: TranslateOptions,
+    replacements?: ComplexReplacementDictionary,
+  ): React.ReactElement<any>;
   translate(id: string, replacements?: PrimitiveReplacementDictionary): string;
   translate(
     id: string,
@@ -81,11 +95,20 @@ export default class I18n {
   ): React.ReactElement<any>;
   translate(
     id: string,
+    optionsOrReplacements?:
+      | TranslateOptions
+      | PrimitiveReplacementDictionary
+      | ComplexReplacementDictionary,
     replacements?:
       | PrimitiveReplacementDictionary
       | ComplexReplacementDictionary,
   ): any {
-    return translate(id, this.translations, this.locale, replacements);
+    const normalizedOptions =
+      replacements == null
+        ? optionsOrReplacements || {}
+        : {...optionsOrReplacements, replacements};
+
+    return translate(id, normalizedOptions, this.translations, this.locale);
   }
 
   formatNumber(

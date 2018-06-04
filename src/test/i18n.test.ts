@@ -124,20 +124,21 @@ describe('I18n', () => {
   });
 
   describe('#translate()', () => {
-    it('calls the translate() utility with translations, key, locale, and replacements', () => {
+    it('calls the translate() utility with translations, key, locale, scope, and replacements', () => {
       const mockResult = 'translated string';
       const replacements = {name: 'Chris'};
+      const scope = {scope: 'goodbye'};
       translate.mockReturnValue(mockResult);
 
       const i18n = new I18n(defaultTranslations, defaultDetails);
-      const result = i18n.translate('hello', replacements);
+      const result = i18n.translate('hello', scope, replacements);
 
       expect(result).toBe(mockResult);
       expect(translate).toHaveBeenCalledWith(
         'hello',
+        {...scope, replacements},
         defaultTranslations,
         i18n.locale,
-        replacements,
       );
     });
   });

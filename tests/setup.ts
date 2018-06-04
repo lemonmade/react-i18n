@@ -1,9 +1,12 @@
 import {configure} from 'enzyme';
-import 'intl-pluralrules';
 
 import Adapter = require('enzyme-adapter-react-16');
 
 configure({adapter: new Adapter()});
+
+if (Intl.PluralRules == null) {
+  require('intl-pluralrules');
+}
 
 /* eslint-disable no-console */
 const originalConsoleError = console.error.bind(console);
