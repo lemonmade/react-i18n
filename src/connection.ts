@@ -4,8 +4,9 @@ import {noop} from './utilities';
 export interface TranslationGetter {
   (locale: string):
     | TranslationDictionary
-    | Promise<TranslationDictionary | undefined>
-    | undefined;
+    | Promise<TranslationDictionary | undefined | void>
+    | undefined
+    | void;
 }
 
 export interface Options {
@@ -20,7 +21,7 @@ export default class Connection {
   public fallbackTranslations: Options['fallback'];
   public translationsForLocale: TranslationGetter;
 
-  constructor({id, fallback, translations = noop as () => undefined}: Options) {
+  constructor({id, fallback, translations = noop}: Options) {
     this.id = id;
     this.fallbackTranslations = fallback;
     this.translationsForLocale = translations;
