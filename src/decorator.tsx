@@ -64,7 +64,7 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
         let connection: Connection;
 
         if (translations || fallback) {
-          const connectionOptions = {id, fallback, translations};
+          const connectionOptions = {id: name, fallback, translations};
           connection = parentConnection
             ? parentConnection.extend(connectionOptions)
             : new Connection(connectionOptions);

@@ -25,8 +25,9 @@ export default class Manager {
   private translations: Map<
     string,
     | TranslationDictionary
-    | Promise<TranslationDictionary | undefined>
+    | Promise<TranslationDictionary | undefined | void>
     | undefined
+    | void
   >;
 
   constructor(
@@ -45,7 +46,7 @@ export default class Manager {
         const resolvedTranslationDictionary = isPromise(translationDictionary)
           ? await translationDictionary
           : translationDictionary;
-        extractedTranslations[id] = resolvedTranslationDictionary;
+        extractedTranslations[id] = resolvedTranslationDictionary || undefined;
       }),
     );
 
@@ -213,7 +214,7 @@ function isPromise<T>(
   return possiblePromise != null && (possiblePromise as any).then != null;
 }
 
-function filterUndefined<T>(array: (T | undefined)[]): T[] {
+function filterUndefined<T>(array: (T | undefined | void)[]): T[] {
   return array.filter(Boolean) as T[];
 }
 

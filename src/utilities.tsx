@@ -205,3 +205,5 @@ function normalizeIdentifier(id: string, scope?: string | string[]) {
     typeof scope === 'string' ? scope : scope.join(SEPARATOR)
   }${SEPARATOR}${id}`;
 }
+
+export function noop() {}
