@@ -6,6 +6,7 @@ import {
   Provider,
   Manager,
   getTranslationsFromTree,
+  localeMap,
 } from '..';
 
 const fallbackTranslations = {MyComponent: {hello: 'Hello'}};
@@ -27,34 +28,22 @@ function MyComponent({
 const WithI18nComponent = withI18n({
   id: 'MyComponent',
   fallback: fallbackTranslations,
-  translations(locale) {
-    switch (locale) {
-      case 'fr-ca':
-        return frCATranslations;
-      case 'fr':
-        return frTranslations;
-      default:
-        return undefined;
-    }
-  },
-})(MyComponent as any);
+  translations: localeMap({
+    fr: frTranslations,
+    'fr-ca': frCATranslations,
+  }),
+})(MyComponent);
 
 const WithAsyncI18nComponent = withI18n({
   id: 'MyComponent',
   fallback: fallbackTranslations,
-  translations(locale) {
-    switch (locale) {
-      case 'fr-ca':
-        return defer(frCATranslations);
-      case 'fr':
-        return defer(frTranslations);
-      default:
-        return undefined;
-    }
-  },
-})(MyComponent as any);
+  translations: localeMap({
+    fr: () => defer(frTranslations),
+    'fr-ca': () => defer(frCATranslations),
+  }),
+})(MyComponent);
 
-const WithoutOwnI18nComponent = withI18n()(MyComponent as any);
+const WithoutOwnI18nComponent = withI18n()(MyComponent);
 
 describe('server', () => {
   it('allows for synchronously rendering', () => {
@@ -84,6 +73,25 @@ describe('server', () => {
     expect(Object.keys(translations)).toBeArrayOfUniqueItems();
     expect(extractedTranslations).toContain(frCATranslations);
     expect(extractedTranslations).toContain(frTranslations);
+  });
+
+  it('only loads the minimum subset of translations for the locale', async () => {
+    const manager = new Manager({locale: 'fr'});
+    const element = (
+      <Provider manager={manager}>
+        <WithAsyncI18nComponent />
+      </Provider>
+    );
+
+    const translations = await getTranslationsFromTree(element);
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toBe(`<div>${frTranslations.MyComponent.hello}</div>`);
+
+    const extractedTranslations = Object.values(translations);
+    expect(Object.keys(translations)).toBeArrayOfUniqueItems();
+    expect(extractedTranslations).toContain(frTranslations);
+    expect(extractedTranslations).not.toContain(frCATranslations);
   });
 
   it('handles nested translation connections', async () => {

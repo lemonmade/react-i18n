@@ -23,7 +23,10 @@ export interface WithI18nOptions {
   renderWhileLoading?: boolean;
   translations?(
     locale: string,
-  ): TranslationDictionary | Promise<TranslationDictionary> | undefined;
+  ):
+    | TranslationDictionary
+    | Promise<TranslationDictionary | undefined>
+    | undefined;
 }
 
 export interface WithI18nProps {
@@ -119,5 +122,18 @@ export function withI18n({id, fallback, translations}: WithI18nOptions = {}) {
       WrappedComponent as React.ComponentClass<any>,
     );
     return FinalComponent as React.ComponentClass<any> & C;
+  };
+}
+
+export function localeMap(mappings: {
+  [key: string]:
+    | TranslationDictionary
+    | Promise<TranslationDictionary | undefined>
+    | undefined
+    | (() => Promise<TranslationDictionary | undefined>);
+}): NonNullable<WithI18nOptions['translations']> {
+  return locale => {
+    const mapping = mappings[locale];
+    return typeof mapping === 'function' ? mapping() : mapping;
   };
 }
