@@ -5,19 +5,29 @@ import {
   PrimitiveReplacementDictionary,
 } from './types';
 import {MissingTranslationError, MissingReplacementError} from './errors';
+import pseudolocalizeString, {
+  Options as PseudolocalizeOptions,
+} from './pseudolocalize';
 
 const REPLACE_REGEX = /{([^}]*)}/g;
 const MISSING_TRANSLATION = Symbol('Missing translation');
 const PLURALIZATION_KEY_NAME = 'count';
 const SEPARATOR = '.';
+const PSEUDOLOCALIZE_OPTIONS: PseudolocalizeOptions = {
+  startDelimiter: '{',
+  endDelimiter: '}',
+  prepend: '[!!',
+  append: '!!]',
+};
 
 export interface TranslateOptions<
   Replacements extends
     | PrimitiveReplacementDictionary
-    | ComplexReplacementDictionary
+    | ComplexReplacementDictionary = {}
 > {
   scope?: string | string[];
   replacements?: Replacements;
+  pseudolocalize?: boolean | string;
 }
 
 export function translate(
@@ -40,7 +50,7 @@ export function translate(
   translations: TranslationDictionary | TranslationDictionary[],
   locale: string,
 ): any {
-  const {scope, replacements} = options;
+  const {scope, replacements, pseudolocalize} = options;
 
   const normalizedTranslations = Array.isArray(translations)
     ? translations
@@ -54,6 +64,7 @@ export function translate(
       translationDictionary,
       locale,
       replacements,
+      {pseudolocalize},
     );
 
     if (result !== MISSING_TRANSLATION) {
@@ -69,18 +80,21 @@ function translateWithDictionary(
   translations: TranslationDictionary,
   locale: string,
   replacements?: PrimitiveReplacementDictionary,
+  options?: Pick<TranslateOptions, 'pseudolocalize'>,
 ): string | typeof MISSING_TRANSLATION;
 function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   locale: string,
   replacements?: ComplexReplacementDictionary,
+  options?: Pick<TranslateOptions, 'pseudolocalize'>,
 ): React.ReactElement<any> | typeof MISSING_TRANSLATION;
 function translateWithDictionary(
   id: string,
   translations: TranslationDictionary,
   locale: string,
   replacements?: PrimitiveReplacementDictionary | ComplexReplacementDictionary,
+  {pseudolocalize}: Pick<TranslateOptions, 'pseudolocalize'> = {},
 ): any {
   let result: string | TranslationDictionary = translations;
 
@@ -105,8 +119,17 @@ function translateWithDictionary(
     }
   }
 
-  if (typeof result === 'string') {
-    return updateStringWithReplacements(result, replacements);
+  const processedString =
+    typeof result === 'string' && pseudolocalize
+      ? pseudolocalizeString(result, {
+          ...PSEUDOLOCALIZE_OPTIONS,
+          toLocale:
+            typeof pseudolocalize === 'boolean' ? undefined : pseudolocalize,
+        })
+      : result;
+
+  if (typeof processedString === 'string') {
+    return updateStringWithReplacements(processedString, replacements);
   } else {
     return MISSING_TRANSLATION;
   }
@@ -205,5 +228,3 @@ function normalizeIdentifier(id: string, scope?: string | string[]) {
     typeof scope === 'string' ? scope : scope.join(SEPARATOR)
   }${SEPARATOR}${id}`;
 }
-
-export function noop() {}

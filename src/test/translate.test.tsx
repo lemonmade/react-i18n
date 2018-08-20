@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {translate} from '../utilities';
+import {translate} from '../translate';
 import {MissingTranslationError, MissingReplacementError} from '../errors';
 
 const locale = 'en-us';

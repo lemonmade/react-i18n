@@ -7,6 +7,7 @@ export interface I18nDetails {
   locale: string;
   currency?: string;
   timezone?: string;
+  pseudolocalize?: boolean | string;
 }
 
 export interface TranslationDictionary {

@@ -5,8 +5,13 @@ import {
   TranslationDictionary,
   LanguageDirection,
 } from './types';
+import {
+  countryCodeFromLocale,
+  languageFromLocale,
+  normalizeLocale,
+} from './utilities';
 import {MissingCurrencyCodeError, MissingTimezoneError} from './errors';
-import {translate, TranslateOptions as RootTranslateOptions} from './utilities';
+import {translate, TranslateOptions as RootTranslateOptions} from './translate';
 
 export interface NumberFormatOptions extends Intl.NumberFormatOptions {
   as?: 'number' | 'currency' | 'percent';
@@ -43,12 +48,13 @@ const RTL_LANGUAGES = [
 /* eslint-enable */
 
 export default class I18n {
-  locale: string;
-  defaultCurrency?: string;
-  defaultTimezone?: string;
+  readonly locale: string;
+  readonly pseudolocalize: boolean | string;
+  readonly defaultCurrency?: string;
+  readonly defaultTimezone?: string;
 
   get language(): string {
-    return this.locale.split('-')[0];
+    return languageFromLocale(this.locale);
   }
 
   get languageDirection() {
@@ -65,17 +71,18 @@ export default class I18n {
     return this.languageDirection === LanguageDirection.Ltr;
   }
 
-  get countryCode(): string | undefined {
-    return this.locale.split('-')[1];
+  get countryCode() {
+    return countryCodeFromLocale(this.locale);
   }
 
   constructor(
     public translations: TranslationDictionary[],
-    {locale, currency, timezone}: I18nDetails,
+    {locale, currency, timezone, pseudolocalize = false}: I18nDetails,
   ) {
-    this.locale = locale.toLowerCase();
+    this.locale = normalizeLocale(locale);
     this.defaultCurrency = currency;
     this.defaultTimezone = timezone;
+    this.pseudolocalize = pseudolocalize;
   }
 
   translate(
@@ -103,10 +110,11 @@ export default class I18n {
       | PrimitiveReplacementDictionary
       | ComplexReplacementDictionary,
   ): any {
+    const {pseudolocalize} = this;
     const normalizedOptions =
       replacements == null
-        ? optionsOrReplacements || {}
-        : {...optionsOrReplacements, replacements};
+        ? {...optionsOrReplacements, pseudolocalize}
+        : {...optionsOrReplacements, replacements, pseudolocalize};
 
     return translate(id, normalizedOptions, this.translations, this.locale);
   }
