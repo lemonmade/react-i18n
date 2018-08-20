@@ -66,6 +66,9 @@ const LETTERS = new Map<string, string>([
 
 const DEFAULT_RATIO = 1.15;
 const LOCALE_RATIOS = new Map([
+  ['zh', 0.5],
+  ['ja', 0.5],
+  ['ko', 0.8],
   ['fr', 1.3],
   ['it', 1.3],
   ['de', 1.5],
@@ -103,10 +106,10 @@ export default function pseudoLocalize(
     0,
   );
 
-  const charactersToAdd =
+  const charactersToAdjust =
     Math.ceil(adjustableCharacters * sizeRatio({to: toLocale})) -
     adjustableCharacters;
-  const adjustEvery = adjustableCharacters / charactersToAdd;
+  const adjustEvery = adjustableCharacters / Math.abs(charactersToAdjust);
   let adjustAt = adjustEvery;
   let adjustableCharacterIndex = -1;
 
@@ -122,13 +125,13 @@ export default function pseudoLocalize(
               }
 
               const newCharacter = LETTERS.get(character) || character;
-              const shouldDuplicate =
+              const shouldAdjust =
                 isAdjustable &&
                 adjustableCharacterIndex + 1 === Math.floor(adjustAt);
 
-              if (shouldDuplicate) {
+              if (shouldAdjust) {
                 adjustAt += adjustEvery;
-                return newCharacter.repeat(2);
+                return charactersToAdjust < 0 ? '' : newCharacter.repeat(2);
               } else {
                 return newCharacter;
               }

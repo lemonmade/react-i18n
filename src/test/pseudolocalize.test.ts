@@ -68,6 +68,27 @@ describe('pseudolocalize()', () => {
       expect(pseudolocalize('<>')).toBe('<>');
     });
 
+    it('produces a 0.5x length string for Chinese', () => {
+      const pseudo = pseudolocalize('headphones', {
+        toLocale: 'zh',
+      });
+      expect(pseudo).toHaveLength(5);
+    });
+
+    it('produces a 0.5x length string for Japanese', () => {
+      const pseudo = pseudolocalize('headphones', {
+        toLocale: 'ja',
+      });
+      expect(pseudo).toHaveLength(5);
+    });
+
+    it('produces a 0.8x length string for Korean', () => {
+      const pseudo = pseudolocalize('headphones', {
+        toLocale: 'ko',
+      });
+      expect(pseudo).toHaveLength(8);
+    });
+
     it('produces a 1.5x length string for German', () => {
       const pseudo = pseudolocalize('headphones', {
         toLocale: 'de',
