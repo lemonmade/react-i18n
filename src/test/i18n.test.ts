@@ -1,4 +1,4 @@
-jest.mock('../utilities', () => ({
+jest.mock('../translate', () => ({
   translate: jest.fn(),
 }));
 
@@ -6,7 +6,7 @@ import I18n from '../i18n';
 import {LanguageDirection} from '../types';
 import {MissingCurrencyCodeError, MissingTimezoneError} from '../errors';
 
-const translate: jest.Mock = require('../utilities').translate;
+const translate: jest.Mock = require('../translate').translate;
 
 describe('I18n', () => {
   const defaultDetails = {locale: 'en-ca'};
@@ -18,21 +18,21 @@ describe('I18n', () => {
 
   describe('#locale', () => {
     it('is exposed publicly', () => {
-      const locale = 'fr-ca';
+      const locale = 'fr-CA';
       const i18n = new I18n(defaultTranslations, {locale});
       expect(i18n).toHaveProperty('locale', locale);
     });
 
     it('is normalized', () => {
-      const locale = 'fr-CA';
+      const locale = 'fr-ca';
       const i18n = new I18n(defaultTranslations, {locale});
-      expect(i18n).toHaveProperty('locale', locale.toLowerCase());
+      expect(i18n).toHaveProperty('locale', 'fr-CA');
     });
   });
 
   describe('#language', () => {
     it('is determined from the locale', () => {
-      const locale = 'fr-ca';
+      const locale = 'fr-CA';
       const i18n = new I18n(defaultTranslations, {locale});
       expect(i18n).toHaveProperty('language', 'fr');
     });
@@ -88,9 +88,15 @@ describe('I18n', () => {
 
   describe('#countryCode', () => {
     it('is determined from the locale', () => {
+      const locale = 'fr-CA';
+      const i18n = new I18n(defaultTranslations, {locale});
+      expect(i18n).toHaveProperty('countryCode', 'CA');
+    });
+
+    it('is normalized', () => {
       const locale = 'fr-ca';
       const i18n = new I18n(defaultTranslations, {locale});
-      expect(i18n).toHaveProperty('countryCode', 'ca');
+      expect(i18n).toHaveProperty('countryCode', 'CA');
     });
 
     it('is undefined when the locale does not have a country code', () => {
@@ -124,7 +130,7 @@ describe('I18n', () => {
   });
 
   describe('#translate()', () => {
-    it('calls the translate() utility with translations, key, locale, scope, and replacements', () => {
+    it('calls the translate() utility with translations, key, locale, scope, replacements, and pseudolocalization', () => {
       const mockResult = 'translated string';
       const replacements = {name: 'Chris'};
       const scope = {scope: 'goodbye'};
@@ -136,7 +142,7 @@ describe('I18n', () => {
       expect(result).toBe(mockResult);
       expect(translate).toHaveBeenCalledWith(
         'hello',
-        {...scope, replacements},
+        {...scope, replacements, pseudolocalize: false},
         defaultTranslations,
         i18n.locale,
       );
